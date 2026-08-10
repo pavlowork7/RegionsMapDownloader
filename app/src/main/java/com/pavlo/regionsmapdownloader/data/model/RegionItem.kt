@@ -5,6 +5,7 @@ import com.pavlo.regionsmapdownloader.domain.model.Region
 data class RegionItem(
     val name: String? = null,
     val map: Boolean? = null,
+    val continent: String? = null,
     val regions: MutableList<RegionItem>? = null
 )
 
@@ -14,6 +15,8 @@ fun RegionItem.toDomain(): Region {
         name = name ?: "",
         isMap = map ?: false,
         hasChildren = children.isNotEmpty(),
-        subRegions = children.map { it.toDomain() }
+        subRegions = children.map { it.toDomain() },
+        continent = continent ?: "",
+        isContinent = continent?.isNotEmpty() ?: false
     )
 }

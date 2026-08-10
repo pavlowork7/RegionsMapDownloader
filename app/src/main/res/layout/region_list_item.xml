@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingHorizontal="@dimen/fragment_content_horizontal_padding"
+    android:paddingHorizontal="@dimen/padding_normal"
     android:paddingVertical="@dimen/country_item_title_vertical_padding">
 
     <ImageView

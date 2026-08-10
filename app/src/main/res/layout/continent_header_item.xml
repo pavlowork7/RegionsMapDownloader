@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/continentNameTextView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/padding_normal"
+    android:paddingTop="@dimen/padding_normal"
+    style="@style/TextAppearance.Roboto.Medium"
+    tools:text="Europe"/>

@@ -29,7 +29,7 @@ class RegionsListFragment: Fragment(R.layout.region_list_fragment) {
         val regionsRecyclerView = view.findViewById<RecyclerView>(R.id.regionRecyclerView)
         regionsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        val adapter = RegionsRecyclerViewAdapter(
+        val adapter = RegionListAdapter(
             items = emptyList(),
             onItemClick = { }
         )
@@ -55,7 +55,7 @@ class RegionsListFragment: Fragment(R.layout.region_list_fragment) {
                         is RegionsListUiState.Success -> {
                             progressBar.visibility = View.GONE
                             errorTextView.visibility = View.GONE
-                            adapter.updateItems(state.regions)
+                            adapter.updateItems(state.regions.toListItems())
                         }
                     }
                 }

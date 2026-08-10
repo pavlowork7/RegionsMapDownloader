@@ -22,6 +22,7 @@
 
     <style name="TextAppearance.Roboto.Medium" parent="TextAppearance.Material3.BodyLarge">
         <item name="android:fontFamily">@font/roboto_medium</item>
+        <item name="android:textSize">@dimen/roboto_regular_text_size</item>
         <item name="fontFamily">@font/roboto_medium</item>
     </style>
 
