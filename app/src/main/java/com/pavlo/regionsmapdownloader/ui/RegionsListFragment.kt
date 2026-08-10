@@ -13,13 +13,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.pavlo.regionsmapdownloader.R
 import com.pavlo.regionsmapdownloader.RegionApplication
+import com.pavlo.regionsmapdownloader.ui.utils.StringFormatHelper
 import kotlinx.coroutines.launch
 
 class RegionsListFragment: Fragment(R.layout.region_list_fragment) {
 
     private val viewModel: RegionsViewModel by viewModels {
         val app = requireActivity().application as RegionApplication
-        RegionsViewModelFactory(app.appInitializer.getAllRegionsUseCase)
+        RegionsViewModelFactory(
+            app.appInitializer.getAllRegionsUseCase,
+            app.appInitializer.getDeviceMemoryInfoUseCase
+        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -38,6 +42,8 @@ class RegionsListFragment: Fragment(R.layout.region_list_fragment) {
 
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
         val errorTextView = view.findViewById<TextView>(R.id.errorTextView)
+        val deviceMemoryProgressBar = view.findViewById<ProgressBar>(R.id.deviceMemoryProgressBar)
+        val freeSpaceTextView = view.findViewById<TextView>(R.id.freeSpaceTextView)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -62,8 +68,22 @@ class RegionsListFragment: Fragment(R.layout.region_list_fragment) {
             }
         }
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.memoryInfo.collect { memoryInfo ->
+                    memoryInfo ?: return@collect
+                    deviceMemoryProgressBar.progress = memoryInfo.usedPercent
+                    freeSpaceTextView.text = getString(
+                        R.string.device_free_space_format,
+                        StringFormatHelper.formatGb(memoryInfo.freeBytes)
+                    )
+                }
+            }
+        }
 
-        viewModel.loadContent()
+
+        viewModel.loadRegions()
+        viewModel.loadMemoryInfo()
     }
 
     companion object {

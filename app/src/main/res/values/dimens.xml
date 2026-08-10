@@ -7,4 +7,7 @@
     <dimen name="roboto_medium_text_size">16sp</dimen>
 
     <dimen name="padding_normal">16dp</dimen>
+    <dimen name="padding_small">8dp</dimen>
+
+    <dimen name="section_divider_height">8dp</dimen>
 </resources>
