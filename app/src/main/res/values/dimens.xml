@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="fragment_content_horizontal_padding">16dp</dimen>
+    <dimen name="country_item_title_horizontal_padding">20dp</dimen>
+    <dimen name="country_item_title_vertical_padding">20dp</dimen>
+
+    <dimen name="roboto_regular_text_size">14sp</dimen>
+</resources>
