@@ -7,12 +7,17 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.pavlo.regionsmapdownloader.R
-import com.pavlo.regionsmapdownloader.data.model.RegionItem
+import com.pavlo.regionsmapdownloader.domain.model.Region
 
 class RegionsRecyclerViewAdapter(
-    private val items: List<RegionItem>,
-    private val onItemClick: (RegionItem) -> Unit,
+    private var items: List<Region>,
+    private val onItemClick: (Region) -> Unit,
 ): RecyclerView.Adapter<RegionsRecyclerViewAdapter.RegionViewHolder>() {
+
+    fun updateItems(newItems: List<Region>) {
+        items = newItems
+        notifyDataSetChanged()
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RegionViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.region_list_item, parent, false)
         return RegionViewHolder(view)
@@ -20,7 +25,7 @@ class RegionsRecyclerViewAdapter(
 
     override fun onBindViewHolder(holder: RegionViewHolder, position: Int) {
         val item = items[position]
-        holder.title?.text = item.title
+        holder.title?.text = item.name
         holder.mapButton?.setOnClickListener { onItemClick(item) }
     }
 
