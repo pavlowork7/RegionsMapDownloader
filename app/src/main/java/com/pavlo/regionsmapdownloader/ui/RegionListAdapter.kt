@@ -43,7 +43,7 @@ class RegionListAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    inner class ContinentHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ContinentHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val nameTextView: TextView = itemView.findViewById(R.id.continentNameTextView)
 
         fun bind(header: RegionListItem.ContinentHeader) {

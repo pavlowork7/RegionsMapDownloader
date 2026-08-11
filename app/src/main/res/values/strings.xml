@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">RegionsMapDownloader</string>
     <string name="download_image_icon_content_description">Download image icon</string>
+    <string name="map_icon_content_description">Map Icon</string>
+    <string name="country_placeholder">Country</string>
     <string name="download_maps_title">Download Maps</string>
     <string name="device_memory_label">Device memory</string>
     <string name="device_free_space_format">Free %1$s</string>
