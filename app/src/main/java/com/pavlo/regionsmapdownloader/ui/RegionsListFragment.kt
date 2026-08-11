@@ -23,32 +23,40 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
     private val regionPath: List<String>
         get() = arguments?.getStringArrayList(ARG_REGION_PATH).orEmpty()
 
+    private val isRoot: Boolean
+        get() = regionPath.isEmpty()
+
     private val viewModel: RegionsViewModel by activityViewModels {
         val app = requireActivity().application as RegionApplication
         RegionsViewModelFactory(
             app.appInitializer.getAllRegionsUseCase,
-            app.appInitializer.getDeviceMemoryInfoUseCase
+            app.appInitializer.getDeviceMemoryInfoUseCase,
+            app.appInitializer.regionDownloadScheduler,
+            app.appInitializer.workManager
         )
     }
 
+    private lateinit var regionsRecyclerView: RecyclerView
+    private lateinit var adapter: RegionListAdapter
+    private lateinit var progressBar: ProgressBar
+    private lateinit var errorTextView: TextView
+    private lateinit var freeSpaceTextView: TextView
+    private lateinit var deviceMemoryProgressBar: ProgressBar
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val path = regionPath
-        val isRoot = path.isEmpty()
 
         val deviceMemoryContainer = view.findViewById<View>(R.id.deviceMemoryContainer)
         val sectionDivider = view.findViewById<View>(R.id.sectionDivider)
         deviceMemoryContainer.visibility = if (isRoot) View.VISIBLE else View.GONE
         sectionDivider.visibility = if (isRoot) View.VISIBLE else View.GONE
 
-        // Initializing regions recycler view
-        val regionsRecyclerView = view.findViewById<RecyclerView>(R.id.regionRecyclerView)
-        regionsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        initializeViews(view)
 
-        val adapter = RegionListAdapter(
+        regionsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        adapter = RegionListAdapter(
             items = emptyList(),
-            onDownloadClick = { },
+            onDownloadClick = { regionName, url, destinationPath -> viewModel.startDownload(regionName, url, destinationPath) },
             onRegionClick = { row ->
                 if (row.region.hasChildren) {
                     parentFragmentManager.commit {
@@ -58,12 +66,45 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
                 }
             }
         )
-
         regionsRecyclerView.adapter = adapter
 
-        val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
-        val errorTextView = view.findViewById<TextView>(R.id.errorTextView)
+        observeRegions()
+        observeDownloadProgress()
+        observeCompletedRegions()
 
+        if (isRoot) {
+            observeDeviceMemoryInfo()
+            viewModel.loadMemoryInfo()
+        }
+
+        if (viewModel.state.value !is RegionsListUiState.Success) {
+            viewModel.loadRegions()
+        }
+    }
+
+    private fun observeDownloadProgress() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.downloadProgress.collect { progressMap ->
+                    adapter.setDownloadProgress(progressMap)
+                }
+            }
+        }
+    }
+
+    private fun observeCompletedRegions() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.completedRegions.collect { completedRegions ->
+                    completedRegions.forEach { regionId ->
+                        adapter.markCompleted(regionId)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeRegions() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
@@ -88,14 +129,14 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
                                 )
                                 adapter.updateItems(state.regions.toListItems())
                             } else {
-                                val region = state.regions.findByPath(path)
+                                val region = state.regions.findByPath(regionPath)
                                 (requireActivity() as MainActivity).configureToolbar(
                                     title = region?.name.orEmpty(),
                                     showBackButton = true
                                 )
                                 adapter.updateItems(
                                     region?.subRegions.orEmpty()
-                                        .map { RegionListItem.RegionRow(it, path + it.name) }
+                                        .map { RegionListItem.RegionRow(it, regionPath + it.name) }
                                 )
                             }
                         }
@@ -103,30 +144,29 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
                 }
             }
         }
+    }
 
-        if (isRoot) {
-            val deviceMemoryProgressBar = view.findViewById<ProgressBar>(R.id.deviceMemoryProgressBar)
-            val freeSpaceTextView = view.findViewById<TextView>(R.id.freeSpaceTextView)
-
-            viewLifecycleOwner.lifecycleScope.launch {
-                viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.memoryInfo.collect { memoryInfo ->
-                        memoryInfo ?: return@collect
-                        deviceMemoryProgressBar.progress = memoryInfo.usedPercent
-                        freeSpaceTextView.text = getString(
-                            R.string.device_free_space_format,
-                            StringFormatHelper.formatGb(memoryInfo.freeBytes)
-                        )
-                    }
+    private fun observeDeviceMemoryInfo() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.memoryInfo.collect { memoryInfo ->
+                    memoryInfo ?: return@collect
+                    deviceMemoryProgressBar.progress = memoryInfo.usedPercent
+                    freeSpaceTextView.text = getString(
+                        R.string.device_free_space_format,
+                        StringFormatHelper.formatGb(memoryInfo.freeBytes, getString(R.string.gb_format))
+                    )
                 }
             }
-
-            viewModel.loadMemoryInfo()
         }
+    }
 
-        if (viewModel.state.value !is RegionsListUiState.Success) {
-            viewModel.loadRegions()
-        }
+    private fun initializeViews(view: View) {
+        regionsRecyclerView = view.findViewById(R.id.regionRecyclerView)
+        progressBar = view.findViewById(R.id.progressBar)
+        errorTextView = view.findViewById(R.id.errorTextView)
+        deviceMemoryProgressBar = view.findViewById(R.id.deviceMemoryProgressBar)
+        freeSpaceTextView = view.findViewById(R.id.freeSpaceTextView)
     }
 
     companion object {

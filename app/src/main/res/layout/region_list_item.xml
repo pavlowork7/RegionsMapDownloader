@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/regionRecyclerView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -10,22 +11,44 @@
     android:paddingVertical="@dimen/country_item_title_vertical_padding"
     android:clickable="true"
     android:focusable="true"
-    android:background="?attr/selectableItemBackground">
+    android:background="@drawable/bg_region_item_card"
+    android:foreground="?attr/selectableItemBackground">
 
     <ImageView
+        android:id="@+id/regionMapIconImageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/ic_map"
         android:contentDescription="@string/map_icon_content_description"/>
 
-    <TextView
-        android:id="@+id/regionTitleTextView"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:paddingHorizontal="@dimen/country_item_title_horizontal_padding"
-        android:text="@string/country_placeholder"
-        style="@style/TextAppearance.Roboto.Regular"/>
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/regionTitleTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/country_placeholder"
+            style="@style/TextAppearance.Roboto.Regular"/>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/linearProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/padding_small"
+            android:visibility="gone"
+            android:max="100"
+            app:trackColor="@color/gray_light"
+            app:indicatorColor="@color/blue_primary"
+            app:trackCornerRadius="@dimen/progress_track_corner_radius"
+            app:trackThickness="@dimen/progress_track_thickness"
+            tools:visibility="visible"
+            tools:progress="45" />
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/regionMapImageButton"
@@ -33,6 +56,6 @@
         android:layout_height="wrap_content"
         android:contentDescription="@string/download_image_icon_content_description"
         android:src="@drawable/ic_action_import"
-        android:background="@color/white"/>
+        android:background="?attr/selectableItemBackgroundBorderless"/>
 
 </LinearLayout>

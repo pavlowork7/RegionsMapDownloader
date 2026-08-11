@@ -6,4 +6,7 @@
     <color name="orange_primary_dark">#E68200</color>
     <color name="gray_light">#E0E0E0</color>
     <color name="gray_divider">#EEEEEE</color>
+    <color name="gray_icon">#757575</color>
+    <color name="blue_primary">#2196F3</color>
+    <color name="green_success">#4CAF50</color>
 </resources>

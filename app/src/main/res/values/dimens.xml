@@ -10,4 +10,10 @@
     <dimen name="padding_small">8dp</dimen>
 
     <dimen name="section_divider_height">8dp</dimen>
+
+    <dimen name="region_card_stroke_width">1dp</dimen>
+    <dimen name="region_card_corner_radius">8dp</dimen>
+
+    <dimen name="progress_track_corner_radius">4dp</dimen>
+    <dimen name="progress_track_thickness">8dp</dimen>
 </resources>

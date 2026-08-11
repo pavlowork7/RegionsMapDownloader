@@ -4,7 +4,20 @@ import com.pavlo.regionsmapdownloader.domain.model.Region
 
 sealed class RegionListItem {
     data class ContinentHeader(val name: String) : RegionListItem()
-    data class RegionRow(val region: Region, val path: List<String>) : RegionListItem()
+    data class RegionRow(val region: Region, val path: List<String>): RegionListItem() {
+
+        val downloadUrl = "https://download.osmand.net/download?standard=yes&file=${getFileName()}_2.obf.zip"
+
+        fun getFileName(): String {
+            val components = path.toMutableList()
+            val continent = components.removeAt(0)
+            components.add(continent)
+            val uppercasedRegion = components[0].replaceFirstChar(Char::uppercase)
+            components.removeAt(0)
+            components.add(0, uppercasedRegion)
+            return components.joinToString("_")
+        }
+    }
 }
 
 fun List<Region>.toListItems(): List<RegionListItem> = flatMap { continent ->

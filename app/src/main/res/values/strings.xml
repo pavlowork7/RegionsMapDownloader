@@ -6,4 +6,5 @@
     <string name="download_maps_title">Download Maps</string>
     <string name="device_memory_label">Device memory</string>
     <string name="device_free_space_format">Free %1$s</string>
+    <string name="gb_format">%.2f Gb</string>
 </resources>
