@@ -39,4 +39,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    fun configureToolbar(title: String, showBackButton: Boolean) {
+        supportActionBar?.title = title
+        supportActionBar?.setDisplayHomeAsUpEnabled(showBackButton)
+        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener(
+            if (showBackButton) View.OnClickListener { onBackPressedDispatcher.onBackPressed() } else null
+        )
+    }
 }

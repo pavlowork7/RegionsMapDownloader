@@ -11,7 +11,8 @@ import com.pavlo.regionsmapdownloader.domain.model.Region
 
 class RegionListAdapter(
     private var items: List<RegionListItem>,
-    private val onItemClick: (Region) -> Unit,
+    private val onDownloadClick: (Region) -> Unit,
+    private val onRegionClick: (RegionListItem.RegionRow) -> Unit,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun updateItems(newItems: List<RegionListItem>) {
@@ -36,7 +37,7 @@ class RegionListAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = items[position]) {
             is RegionListItem.ContinentHeader -> (holder as ContinentHeaderViewHolder).bind(item)
-            is RegionListItem.RegionRow -> (holder as RegionViewHolder).bind(item.region)
+            is RegionListItem.RegionRow -> (holder as RegionViewHolder).bind(item)
         }
     }
 
@@ -54,9 +55,10 @@ class RegionListAdapter(
         private val title: TextView? = itemView.findViewById(R.id.regionTitleTextView)
         private val mapButton: ImageButton? = itemView.findViewById(R.id.regionMapImageButton)
 
-        fun bind(region: Region) {
-            title?.text = region.name
-            mapButton?.setOnClickListener { onItemClick(region) }
+        fun bind(row: RegionListItem.RegionRow) {
+            title?.text = row.region.name
+            mapButton?.setOnClickListener { onDownloadClick(row.region) }
+            itemView.setOnClickListener { onRegionClick(row) }
         }
     }
 

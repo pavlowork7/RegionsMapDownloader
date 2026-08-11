@@ -19,7 +19,8 @@
         android:background="@color/orange_primary"
         app:title="@string/download_maps_title"
         app:titleTextColor="@color/white"
-        app:titleTextAppearance="@style/TextAppearance.Roboto.Bold"/>
+        app:titleTextAppearance="@style/TextAppearance.Roboto.Bold"
+        app:navigationIconTint="@color/white"/>
 
     <FrameLayout
         android:id="@+id/fragmentContainer"
