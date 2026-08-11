@@ -10,11 +10,11 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.pavlo.regionsmapdownloader.R
-import com.pavlo.regionsmapdownloader.domain.model.Region
 
 class RegionListAdapter(
     private var items: List<RegionListItem>,
     private val onDownloadClick: (String, String, String) -> Unit,
+    private val onCancelClick: (String) -> Unit,
     private val onRegionClick: (RegionListItem.RegionRow) -> Unit,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
@@ -27,7 +27,7 @@ class RegionListAdapter(
         downloadProgressMap = progress
         changedNames.forEach { name ->
             val position = items.indexOfFirst {
-                it is RegionListItem.RegionRow && it.region.name == name
+                it is RegionListItem.RegionRow && it.downloadKey == name
             }
             if (position != -1) {
                 notifyItemChanged(position, PAYLOAD_PROGRESS)
@@ -38,7 +38,7 @@ class RegionListAdapter(
     fun markCompleted(name: String) {
         if (!completedRegions.add(name)) return
         val position = items.indexOfFirst {
-            it is RegionListItem.RegionRow && it.region.name == name
+            it is RegionListItem.RegionRow && it.downloadKey == name
         }
         if (position != -1) {
             notifyItemChanged(position, PAYLOAD_PROGRESS)
@@ -83,9 +83,10 @@ class RegionListAdapter(
 
         val item = items[position]
         if (item is RegionListItem.RegionRow && holder is RegionViewHolder) {
-            holder.progressBar?.progress = downloadProgressMap[item.region.name] ?: 0
-            holder.progressBar?.visibility = if (item.region.name in downloadProgressMap) View.VISIBLE else View.GONE
-            holder.applyCompletedTint(item.region.name in completedRegions)
+            holder.progressBar?.progress = downloadProgressMap[item.downloadKey] ?: 0
+            holder.progressBar?.visibility = if (item.downloadKey in downloadProgressMap) View.VISIBLE else View.GONE
+            holder.applyCompletedTint(item.downloadKey in completedRegions)
+            holder.applyDownloadIcon(item.downloadKey in downloadProgressMap)
         }
     }
 
@@ -100,6 +101,7 @@ class RegionListAdapter(
     }
 
     inner class RegionViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val cardContainer: View = itemView.findViewById(R.id.regionCardContainer)
         private val title: TextView? = itemView.findViewById(R.id.regionTitleTextView)
         private val mapButton: ImageButton? = itemView.findViewById(R.id.regionMapImageButton)
         private val mapIcon: ImageView? = itemView.findViewById(R.id.regionMapIconImageView)
@@ -107,12 +109,20 @@ class RegionListAdapter(
 
         fun bind(row: RegionListItem.RegionRow) {
             title?.text = row.region.displayName
-            mapButton?.setOnClickListener { onDownloadClick(row.region.name, row.downloadUrl, row.getFileName()) }
-            itemView.setOnClickListener { onRegionClick(row) }
+            mapButton?.visibility = if (row.region.isMap) View.VISIBLE else View.GONE
+            mapButton?.setOnClickListener {
+                if (row.downloadKey in downloadProgressMap) {
+                    onCancelClick(row.downloadKey)
+                } else {
+                    onDownloadClick(row.downloadKey, row.downloadUrl, row.region.downloadName)
+                }
+            }
+            cardContainer.setOnClickListener { onRegionClick(row) }
 
-            progressBar?.progress = downloadProgressMap[row.region.name] ?: 0
-            progressBar?.visibility = if (row.region.name in downloadProgressMap) View.VISIBLE else View.GONE
-            applyCompletedTint(row.region.name in completedRegions)
+            progressBar?.progress = downloadProgressMap[row.downloadKey] ?: 0
+            progressBar?.visibility = if (row.downloadKey in downloadProgressMap) View.VISIBLE else View.GONE
+            applyCompletedTint(row.downloadKey in completedRegions)
+            applyDownloadIcon(row.downloadKey in downloadProgressMap)
         }
 
         fun applyCompletedTint(isCompleted: Boolean) {
@@ -121,6 +131,14 @@ class RegionListAdapter(
             } else {
                 mapIcon?.clearColorFilter()
             }
+        }
+
+        fun applyDownloadIcon(isDownloading: Boolean) {
+            mapButton?.setImageResource(if (isDownloading) R.drawable.ic_action_remove_dark else R.drawable.ic_action_import)
+            mapButton?.contentDescription = itemView.context.getString(
+                if (isDownloading) R.string.cancel_download_icon_content_description
+                else R.string.download_image_icon_content_description
+            )
         }
     }
 

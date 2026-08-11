@@ -6,6 +6,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.pavlo.regionsmapdownloader.domain.model.DownloadProgress
 import com.pavlo.regionsmapdownloader.domain.usecase.DownloadRegionUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
@@ -21,12 +22,16 @@ class RegionDownloadWorker(
         val destination = inputData.getString(KEY_DEST) ?: return@withLock Result.failure()
 
         try {
+            var lastReportedPercent = -1
             downloadRegionUseCase(url, File(destination)).collect { downloadProgress ->
-                if (downloadProgress is DownloadProgress.InProgress) {
+                if (downloadProgress is DownloadProgress.InProgress && downloadProgress.percent != lastReportedPercent) {
+                    lastReportedPercent = downloadProgress.percent
                     setProgress(workDataOf(KEY_PROGRESS to downloadProgress.percent))
                 }
             }
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure()
         }

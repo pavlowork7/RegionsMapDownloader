@@ -2,60 +2,72 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/regionRecyclerView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingHorizontal="@dimen/padding_normal"
-    android:paddingVertical="@dimen/country_item_title_vertical_padding"
-    android:clickable="true"
-    android:focusable="true"
-    android:background="@drawable/bg_region_item_card"
-    android:foreground="?attr/selectableItemBackground">
-
-    <ImageView
-        android:id="@+id/regionMapIconImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_map"
-        android:contentDescription="@string/map_icon_content_description"/>
+    android:orientation="vertical">
 
     <LinearLayout
-        android:layout_width="0dp"
+        android:id="@+id/regionCardContainer"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:paddingHorizontal="@dimen/country_item_title_horizontal_padding"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/padding_normal"
+        android:paddingVertical="@dimen/country_item_title_vertical_padding"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/bg_region_item_card"
+        android:foreground="?attr/selectableItemBackground">
 
-        <TextView
-            android:id="@+id/regionTitleTextView"
+        <ImageView
+            android:id="@+id/regionMapIconImageView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/country_placeholder"
-            style="@style/TextAppearance.Roboto.Regular"/>
+            android:src="@drawable/ic_map"
+            android:contentDescription="@string/map_icon_content_description"/>
 
-        <com.google.android.material.progressindicator.LinearProgressIndicator
-            android:id="@+id/linearProgress"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/padding_small"
-            android:visibility="gone"
-            android:max="100"
-            app:trackColor="@color/gray_light"
-            app:indicatorColor="@color/blue_primary"
-            app:trackCornerRadius="@dimen/progress_track_corner_radius"
-            app:trackThickness="@dimen/progress_track_thickness"
-            tools:visibility="visible"
-            tools:progress="45" />
+            android:layout_weight="1"
+            android:paddingHorizontal="@dimen/country_item_title_horizontal_padding"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/regionTitleTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/country_placeholder"
+                style="@style/TextAppearance.Roboto.Regular"/>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/linearProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/padding_small"
+                android:visibility="gone"
+                android:max="100"
+                app:trackColor="@color/gray_light"
+                app:indicatorColor="@color/blue_primary"
+                app:trackThickness="@dimen/progress_track_thickness"
+                tools:visibility="visible"
+                tools:progress="45" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/regionMapImageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/download_image_icon_content_description"
+            android:src="@drawable/ic_action_import"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+
     </LinearLayout>
 
-    <ImageButton
-        android:id="@+id/regionMapImageButton"
-        android:layout_width="wrap_content"
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:contentDescription="@string/download_image_icon_content_description"
-        android:src="@drawable/ic_action_import"
-        android:background="?attr/selectableItemBackgroundBorderless"/>
+        app:dividerColor="@color/gray_divider"
+        app:dividerThickness="@dimen/region_item_divider_thickness"/>
 
 </LinearLayout>

@@ -6,6 +6,7 @@ data class RegionItem(
     val name: String? = null,
     val map: Boolean? = null,
     val continent: String? = null,
+    val downloadName: String? = null,
     val regions: MutableList<RegionItem>? = null
 )
 
@@ -17,6 +18,7 @@ fun RegionItem.toDomain(): Region {
         hasChildren = children.isNotEmpty(),
         subRegions = children.map { it.toDomain() },
         continent = continent ?: "",
-        isContinent = continent?.isNotEmpty() ?: false
+        isContinent = continent?.isNotEmpty() ?: false,
+        downloadName = downloadName ?: name ?: ""
     )
 }

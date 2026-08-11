@@ -6,5 +6,6 @@
     android:layout_height="wrap_content"
     android:paddingHorizontal="@dimen/padding_normal"
     android:paddingTop="@dimen/padding_normal"
+    android:paddingBottom="@dimen/padding_normal"
     style="@style/TextAppearance.Roboto.Medium"
     tools:text="Europe"/>

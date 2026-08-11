@@ -44,7 +44,7 @@ class RegionsViewModel(
         viewModelScope.launch {
             getAllRegionsUseCase().fold(
                 onSuccess = { regions ->
-                    _state.value = RegionsListUiState.Success(regions)
+                    _state.value = RegionsListUiState.Success(regions.filter { it.name == "europe"})
                 },
                 onFailure = { error ->
                     _state.value = RegionsListUiState.Error(message = error.toString())
@@ -59,23 +59,28 @@ class RegionsViewModel(
         }
     }
 
-    fun startDownload(regionName: String, url: String, destinationPath: String) {
-        val workId = downloadScheduler.schedule(regionName, url, destinationPath)
-        _downloadProgress.update { it + (regionName to 0) }
+    fun cancelDownload(regionKey: String) {
+        downloadScheduler.cancel(regionKey)
+    }
+
+    fun startDownload(regionKey: String, url: String, destinationPath: String) {
+        val workId = downloadScheduler.schedule(regionKey, url, destinationPath)
+        _completedRegions.update { it - regionKey }
+        _downloadProgress.update { it + (regionKey to 0) }
 
         viewModelScope.launch {
             workManager.getWorkInfoByIdFlow(workId).collect { workInfo ->
                 when (workInfo?.state) {
                     WorkInfo.State.SUCCEEDED -> {
-                        _completedRegions.update { it + regionName }
-                        _downloadProgress.update { it - regionName }
+                        _completedRegions.update { it + regionKey }
+                        _downloadProgress.update { it - regionKey }
                     }
                     WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
-                        _downloadProgress.update { it - regionName }
+                        _downloadProgress.update { it - regionKey }
                     }
                     else -> {
                         val percent = workInfo?.progress?.getInt(RegionDownloadWorker.KEY_PROGRESS, 0) ?: 0
-                        _downloadProgress.update { it + (regionName to percent) }
+                        _downloadProgress.update { it + (regionKey to percent) }
                     }
                 }
             }

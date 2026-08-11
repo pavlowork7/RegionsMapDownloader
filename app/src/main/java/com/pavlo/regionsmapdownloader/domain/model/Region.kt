@@ -7,6 +7,7 @@ data class Region(
     val subRegions: List<Region>,
     val hasChildren: Boolean,
     val isContinent: Boolean,
+    val downloadName: String,
 ) {
     val displayName: String
         get() = name.replaceFirstChar { it.uppercase() }

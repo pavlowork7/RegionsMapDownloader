@@ -56,7 +56,8 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
         regionsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = RegionListAdapter(
             items = emptyList(),
-            onDownloadClick = { regionName, url, destinationPath -> viewModel.startDownload(regionName, url, destinationPath) },
+            onDownloadClick = { regionKey, url, destinationPath -> viewModel.startDownload(regionKey, url, destinationPath) },
+            onCancelClick = { regionKey -> viewModel.cancelDownload(regionKey) },
             onRegionClick = { row ->
                 if (row.region.hasChildren) {
                     parentFragmentManager.commit {
@@ -131,7 +132,7 @@ class RegionsListFragment: Fragment(R.layout.region_list_main_fragment) {
                             } else {
                                 val region = state.regions.findByPath(regionPath)
                                 (requireActivity() as MainActivity).configureToolbar(
-                                    title = region?.name.orEmpty(),
+                                    title = region?.displayName.orEmpty(),
                                     showBackButton = true
                                 )
                                 adapter.updateItems(

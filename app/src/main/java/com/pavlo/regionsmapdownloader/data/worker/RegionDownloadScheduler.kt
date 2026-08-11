@@ -7,11 +7,10 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.pavlo.regionsmapdownloader.domain.model.Region
 import java.util.UUID
 
 class RegionDownloadScheduler(private val context: Context) {
-    fun schedule(regionName: String, url: String, destinationPath: String): UUID {
+    fun schedule(regionKey: String, url: String, destinationPath: String): UUID {
         val workRequest = OneTimeWorkRequestBuilder<RegionDownloadWorker>()
             .setInputData(workDataOf(
                 RegionDownloadWorker.KEY_URL to url,
@@ -21,8 +20,12 @@ class RegionDownloadScheduler(private val context: Context) {
             .build()
 
         WorkManager.getInstance(context).enqueueUniqueWork(
-            regionName, ExistingWorkPolicy.REPLACE, workRequest
+            regionKey, ExistingWorkPolicy.REPLACE, workRequest
         )
         return workRequest.id
+    }
+
+    fun cancel(regionKey: String) {
+        WorkManager.getInstance(context).cancelUniqueWork(regionKey)
     }
 }
