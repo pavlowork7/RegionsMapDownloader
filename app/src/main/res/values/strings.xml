@@ -8,4 +8,10 @@
     <string name="device_memory_label">Device memory</string>
     <string name="device_free_space_format">Free %1$s</string>
     <string name="gb_format">%.2f Gb</string>
+    <string name="downloading_map">Downloading map</string>
+    <string name="cancel">Cancel</string>
+    <string name="download_notification_channel_name">Map downloads</string>
+    <string name="download_notification_channel_description">Shows progress of region map downloads</string>
+    <string name="download_failed">Download failed</string>
+    <string name="retry">Retry</string>
 </resources>

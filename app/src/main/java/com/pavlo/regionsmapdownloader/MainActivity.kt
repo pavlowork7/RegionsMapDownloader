@@ -1,35 +1,47 @@
 package com.pavlo.regionsmapdownloader
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.FrameLayout
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.commit
+import com.pavlo.regionsmapdownloader.databinding.ActivityMainBinding
 import com.pavlo.regionsmapdownloader.ui.RegionsListFragment
 
-class MainActivity : AppCompatActivity() {
+interface ToolbarHost {
+    fun configureToolbar(title: String, showBackButton: Boolean)
+}
+
+class MainActivity : AppCompatActivity(), ToolbarHost {
+
+    private lateinit var binding: ActivityMainBinding
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: notification is a nice-to-have */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
-        setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
+        setSupportActionBar(binding.toolbar)
 
-        val statusBarScrim = findViewById<View>(R.id.statusBarScrim)
-        val fragmentContainer = findViewById<FrameLayout>(R.id.fragmentContainer)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.rootContainer)) { _, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(binding.rootContainer) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            statusBarScrim.layoutParams = statusBarScrim.layoutParams.apply {
+            binding.statusBarScrim.layoutParams = binding.statusBarScrim.layoutParams.apply {
                 height = systemBars.top
             }
-            fragmentContainer.setPadding(0, 0, 0, systemBars.bottom)
+            binding.fragmentContainer.setPadding(0, 0, 0, systemBars.bottom)
             insets
         }
 
@@ -38,13 +50,24 @@ class MainActivity : AppCompatActivity() {
                 replace(R.id.fragmentContainer, RegionsListFragment.newInstance())
             }
         }
+
+        requestNotificationPermissionIfNeeded()
     }
 
-    fun configureToolbar(title: String, showBackButton: Boolean) {
+    override fun configureToolbar(title: String, showBackButton: Boolean) {
         supportActionBar?.title = title
         supportActionBar?.setDisplayHomeAsUpEnabled(showBackButton)
-        findViewById<Toolbar>(R.id.toolbar).setNavigationOnClickListener(
+        binding.toolbar.setNavigationOnClickListener(
             if (showBackButton) View.OnClickListener { onBackPressedDispatcher.onBackPressed() } else null
         )
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 }

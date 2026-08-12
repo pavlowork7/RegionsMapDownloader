@@ -3,6 +3,7 @@ package com.pavlo.regionsmapdownloader.data.model
 import android.content.Context
 import android.util.Xml
 import org.xmlpull.v1.XmlPullParser
+import java.io.InputStream
 
 object XmlParser {
     private const val NAME_PLACEHOLDER = "\$name"
@@ -16,11 +17,15 @@ object XmlParser {
     private const val YES_VALUE = "yes"
     private data class DownloadContext(val prefix: String?, val suffix: String?)
 
-    fun parseItemsFromAssets(context: Context, fileName: String): List<RegionItem> {
-        val inputStream = context.assets.open(fileName)
+    fun parseItemsFromAssets(context: Context, fileName: String): List<RegionItem> =
+        context.assets.open(fileName).use { parse(it) }
 
-        val parser = Xml.newPullParser()
-        parser.setInput(inputStream, "UTF-8")
+    fun parse(
+        input: InputStream,
+        parserFactory: () -> XmlPullParser = ::defaultParser
+    ): List<RegionItem> {
+        val parser = parserFactory()
+        parser.setInput(input, "UTF-8")
 
         var eventType = parser.eventType
 
@@ -66,15 +71,14 @@ object XmlParser {
                 }
                 XmlPullParser.END_TAG -> {
                     if (parser.name == REGION_TAG) {
-                        stack.removeLast()
-                        contextStack.removeLast()
+                        if (stack.isNotEmpty()) stack.removeLast()
+                        if (contextStack.isNotEmpty()) contextStack.removeLast()
                     }
                 }
             }
             eventType = parser.next()
         }
 
-        inputStream.close()
         return rootRegions
     }
 
@@ -84,4 +88,6 @@ object XmlParser {
         prefix != null -> "${prefix}_${name}"
         else -> name
     }
+
+    private fun defaultParser(): XmlPullParser = Xml.newPullParser()
 }

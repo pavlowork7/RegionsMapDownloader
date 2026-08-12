@@ -27,8 +27,8 @@ class AppInitializer(context: Context) {
     val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(TIMEOUT_VALUE, TimeUnit.SECONDS)
-            .readTimeout(TIMEOUT_VALUE, TimeUnit.SECONDS)
-            .writeTimeout(TIMEOUT_VALUE, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT_VALUE, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT_VALUE, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
     }
@@ -38,7 +38,7 @@ class AppInitializer(context: Context) {
     }
 
     val deviceStorageDataSource: DeviceStorageDataSource by lazy {
-        DeviceStorageDataSourceImpl()
+        DeviceStorageDataSourceImpl(appContext)
     }
 
     val regionDownloadDataSource: RegionDownloadDataSource by lazy {
@@ -83,5 +83,7 @@ class AppInitializer(context: Context) {
 
     companion object {
         const val TIMEOUT_VALUE = 15L
+        const val READ_TIMEOUT_VALUE = 60L
+        const val WRITE_TIMEOUT_VALUE = 15L
     }
 }

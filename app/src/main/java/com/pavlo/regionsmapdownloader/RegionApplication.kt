@@ -2,6 +2,7 @@ package com.pavlo.regionsmapdownloader
 
 import android.app.Application
 import androidx.work.Configuration
+import com.pavlo.regionsmapdownloader.data.worker.DownloadNotifications
 
 class RegionApplication: Application(), Configuration.Provider {
     lateinit var appInitializer: AppInitializer
@@ -15,5 +16,6 @@ class RegionApplication: Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         appInitializer = AppInitializer(this)
+        DownloadNotifications.createChannel(this)
     }
 }

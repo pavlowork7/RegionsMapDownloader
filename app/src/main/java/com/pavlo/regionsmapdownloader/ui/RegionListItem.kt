@@ -4,17 +4,38 @@ import com.pavlo.regionsmapdownloader.domain.model.Region
 
 sealed class RegionListItem {
     data class ContinentHeader(val name: String) : RegionListItem()
-    data class RegionRow(val region: Region, val path: List<String>): RegionListItem() {
 
+    data class RegionRow(
+        val region: Region,
+        val path: List<String>,
+        val progress: Int? = null,
+        val isCompleted: Boolean = false
+    ) : RegionListItem() {
         val downloadKey: String = path.joinToString("/")
-
-        val downloadUrl = "https://download.osmand.net/download?standard=yes&file=${region.downloadName.replaceFirstChar { it.uppercase() }}_2.obf.zip"
     }
 }
 
-fun List<Region>.toListItems(): List<RegionListItem> = flatMap { continent ->
+fun List<Region>.toListItems(
+    progress: Map<String, Int> = emptyMap(),
+    completed: Set<String> = emptySet()
+): List<RegionListItem> = flatMap { continent ->
     listOf(RegionListItem.ContinentHeader(continent.displayName)) +
-        continent.subRegions.map { RegionListItem.RegionRow(it, listOf(continent.name, it.name)) }
+        continent.subRegions.map { it.toRow(listOf(continent.name, it.name), progress, completed) }
+}
+
+fun List<Region>.toRegionRows(
+    parentPath: List<String>,
+    progress: Map<String, Int> = emptyMap(),
+    completed: Set<String> = emptySet()
+): List<RegionListItem.RegionRow> = map { it.toRow(parentPath + it.name, progress, completed) }
+
+private fun Region.toRow(
+    path: List<String>,
+    progress: Map<String, Int>,
+    completed: Set<String>
+): RegionListItem.RegionRow {
+    val key = path.joinToString("/")
+    return RegionListItem.RegionRow(this, path, progress[key], key in completed)
 }
 
 fun List<Region>.findByPath(path: List<String>): Region? {
