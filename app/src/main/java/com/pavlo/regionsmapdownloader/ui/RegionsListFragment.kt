@@ -58,6 +58,7 @@ class RegionsListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        lastToolbarTitle = null
         binding.deviceMemoryContainer.visibility = if (isRoot) View.VISIBLE else View.GONE
         binding.sectionDivider.visibility = if (isRoot) View.VISIBLE else View.GONE
 

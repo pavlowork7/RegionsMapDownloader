@@ -10,6 +10,7 @@ import com.pavlo.regionsmapdownloader.domain.model.DeviceMemoryInfo
 import com.pavlo.regionsmapdownloader.domain.model.Region
 import com.pavlo.regionsmapdownloader.domain.usecase.GetAllRegionsUseCase
 import com.pavlo.regionsmapdownloader.domain.usecase.GetDeviceMemoryInfoUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -116,7 +117,9 @@ class RegionsViewModel(
         downloadNames[regionKey] = downloadName
         _completedRegions.update { it - regionKey }
         _downloadProgress.update { it + (regionKey to 0) }
-        downloadScheduler.enqueue(regionKey, downloadName)
+        viewModelScope.launch(Dispatchers.IO) {
+            downloadScheduler.enqueue(regionKey, downloadName)
+        }
     }
 
     private companion object {

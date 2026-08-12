@@ -40,7 +40,7 @@ class RegionDownloadWorker(
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
-            if (runAttemptCount < MAX_ATTEMPTS) Result.retry()
+            if (runAttemptCount + 1 < MAX_ATTEMPTS) Result.retry()
             else Result.failure(workDataOf(KEY_ERROR to e.message))
         } catch (e: Exception) {
             Result.failure(workDataOf(KEY_ERROR to e.message))

@@ -20,7 +20,7 @@ fun List<Region>.toListItems(
     completed: Set<String> = emptySet()
 ): List<RegionListItem> = flatMap { continent ->
     listOf(RegionListItem.ContinentHeader(continent.displayName)) +
-        continent.subRegions.map { it.toRow(listOf(continent.name, it.name), progress, completed) }
+        continent.subRegions.toRegionRows(listOf(continent.name), progress, completed)
 }
 
 fun List<Region>.toRegionRows(

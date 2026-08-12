@@ -62,8 +62,9 @@ class RegionDownloadDataSourceImpl(
         val tempFile = File(destination.parentFile, "${destination.name}.part")
         try {
             ZipInputStream(FileInputStream(archiveFile).buffered()).use { zipStream ->
-                generateSequence { zipStream.nextEntry }.firstOrNull { !it.isDirectory }
-                    ?: throw IOException("Downloaded archive contains no files")
+                generateSequence { zipStream.nextEntry }.firstOrNull {
+                    !it.isDirectory && it.name.endsWith(MAP_ENTRY_EXTENSION, ignoreCase = true)
+                } ?: throw IOException("Downloaded archive contains no ${MAP_ENTRY_EXTENSION} file")
                 FileOutputStream(tempFile).use { output -> zipStream.copyTo(output) }
             }
             if (!tempFile.renameTo(destination)) throw IOException("Cannot finalize ${destination.name}")
@@ -77,5 +78,6 @@ class RegionDownloadDataSourceImpl(
     companion object {
         private const val FILE_BUFFER_VALUE = 32 * 1024
         private const val HUNDRED_PERCENT_VALUE = 100
+        private const val MAP_ENTRY_EXTENSION = ".obf"
     }
 }
