@@ -1,0 +1,192 @@
+package com.pavlo.regionsmapdownloader.ui
+
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.commit
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
+import com.pavlo.regionsmapdownloader.R
+import com.pavlo.regionsmapdownloader.RegionApplication
+import com.pavlo.regionsmapdownloader.ToolbarHost
+import com.pavlo.regionsmapdownloader.databinding.RegionListMainFragmentBinding
+import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueEvent
+import com.pavlo.regionsmapdownloader.ui.utils.StringFormatHelper
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+
+class RegionsListFragment : Fragment() {
+
+    private var _binding: RegionListMainFragmentBinding? = null
+    private val binding get() = _binding!!
+
+    private val regionPath: List<String>
+        get() = arguments?.getStringArrayList(ARG_REGION_PATH).orEmpty()
+
+    private val isRoot: Boolean
+        get() = regionPath.isEmpty()
+
+    private val viewModel: RegionsViewModel by activityViewModels {
+        viewModelFactory {
+            initializer {
+                val di = (requireActivity().application as RegionApplication).appInitializer
+                RegionsViewModel(
+                    di.getAllRegionsUseCase,
+                    di.getDeviceMemoryInfoUseCase,
+                    di.regionDownloadScheduler,
+                    di.downloadQueue
+                )
+            }
+        }
+    }
+
+    private lateinit var adapter: RegionListAdapter
+    private var lastToolbarTitle: String? = null
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = RegionListMainFragmentBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        lastToolbarTitle = null
+        binding.deviceMemoryContainer.visibility = if (isRoot) View.VISIBLE else View.GONE
+        binding.sectionDivider.visibility = if (isRoot) View.VISIBLE else View.GONE
+
+        binding.regionRecyclerView.layoutManager = LinearLayoutManager(requireContext())
+        adapter = RegionListAdapter(
+            onDownloadClick = { downloadName, displayName -> viewModel.startDownload(downloadName, displayName) },
+            onCancelClick = { downloadName -> viewModel.cancelDownload(downloadName) },
+            onRegionClick = { row ->
+                if (row.region.hasChildren) {
+                    parentFragmentManager.commit {
+                        replace(R.id.fragmentContainer, newInstance(row.path))
+                        addToBackStack(row.region.name)
+                    }
+                }
+            }
+        )
+        binding.regionRecyclerView.adapter = adapter
+
+        observeListItems()
+        observeEvents()
+
+        if (isRoot) {
+            observeDeviceMemoryInfo()
+            viewModel.loadMemoryInfo()
+            setToolbar(getString(R.string.download_maps_title), showBackButton = false)
+        }
+
+        if (viewModel.state.value !is RegionsListUiState.Success) {
+            viewModel.loadRegions()
+        }
+    }
+
+    private fun observeListItems() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    viewModel.state,
+                    viewModel.downloadProgress,
+                    viewModel.completedRegions
+                ) { state, progress, completed -> Triple(state, progress, completed) }
+                    .collect { (state, progress, completed) -> renderState(state, progress, completed) }
+            }
+        }
+    }
+
+    private fun renderState(state: RegionsListUiState, progress: Map<String, Int>, completed: Set<String>) {
+        when (state) {
+            is RegionsListUiState.Loading -> {
+                binding.progressBar.visibility = View.VISIBLE
+                binding.errorTextView.visibility = View.GONE
+            }
+            is RegionsListUiState.Error -> {
+                binding.progressBar.visibility = View.GONE
+                binding.errorTextView.visibility = View.VISIBLE
+                binding.errorTextView.text = state.message
+            }
+            is RegionsListUiState.Success -> {
+                binding.progressBar.visibility = View.GONE
+                binding.errorTextView.visibility = View.GONE
+
+                if (isRoot) {
+                    adapter.submitList(state.regions.toListItems(progress, completed))
+                } else {
+                    val region = state.regions.findByPath(regionPath)
+                    setToolbar(region?.displayName.orEmpty(), showBackButton = true)
+                    adapter.submitList(region?.subRegions.orEmpty().toRegionRows(regionPath, progress, completed))
+                }
+            }
+        }
+    }
+
+    private fun setToolbar(title: String, showBackButton: Boolean) {
+        if (title == lastToolbarTitle) return
+        lastToolbarTitle = title
+        (requireActivity() as ToolbarHost).configureToolbar(title = title, showBackButton = showBackButton)
+    }
+
+    private fun observeEvents() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.events.collect { event ->
+                    when (event) {
+                        is DownloadQueueEvent.Failed -> Snackbar
+                            .make(
+                                binding.root,
+                                getString(R.string.download_failed_format, event.item.displayName),
+                                Snackbar.LENGTH_LONG
+                            )
+                            .setAction(R.string.retry) {
+                                viewModel.startDownload(event.item.downloadName, event.item.displayName)
+                            }
+                            .show()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observeDeviceMemoryInfo() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.memoryInfo.collect { memoryInfo ->
+                    memoryInfo ?: return@collect
+                    binding.deviceMemoryProgressBar.progress = memoryInfo.usedPercent
+                    binding.freeSpaceTextView.text = getString(
+                        R.string.device_free_space_format,
+                        StringFormatHelper.formatGb(memoryInfo.freeBytes, getString(R.string.gb_format))
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    companion object {
+        private const val ARG_REGION_PATH = "region_path"
+
+        fun newInstance(path: List<String> = emptyList()): RegionsListFragment {
+            return RegionsListFragment().apply {
+                arguments = Bundle().apply {
+                    putStringArrayList(ARG_REGION_PATH, ArrayList(path))
+                }
+            }
+        }
+    }
+}

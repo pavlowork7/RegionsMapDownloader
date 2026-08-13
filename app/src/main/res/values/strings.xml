@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">RegionsMapDownloader</string>
+    <string name="download_image_icon_content_description">Download image icon</string>
+    <string name="cancel_download_icon_content_description">Cancel download</string>
+    <string name="map_icon_content_description">Map Icon</string>
+    <string name="country_placeholder">Country</string>
+    <string name="download_maps_title">Download Maps</string>
+    <string name="device_memory_label">Device memory</string>
+    <string name="device_free_space_format">Free %1$s</string>
+    <string name="gb_format">%.2f GiB</string>
+    <string name="downloading_map_format">Downloading %1$s</string>
+    <string name="cancel">Cancel</string>
+    <string name="download_notification_channel_name">Map downloads</string>
+    <string name="download_notification_channel_description">Shows progress of region map downloads</string>
+    <string name="download_failed_format">Could not download %1$s</string>
+    <string name="retry">Retry</string>
+
+    <plurals name="downloads_queued">
+        <item quantity="one">%1$d more map in queue</item>
+        <item quantity="other">%1$d more maps in queue</item>
+    </plurals>
 </resources>
