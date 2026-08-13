@@ -6,19 +6,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.snackbar.Snackbar
 import com.pavlo.regionsmapdownloader.R
 import com.pavlo.regionsmapdownloader.RegionApplication
 import com.pavlo.regionsmapdownloader.ToolbarHost
 import com.pavlo.regionsmapdownloader.databinding.RegionListMainFragmentBinding
 import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueEvent
+import com.pavlo.regionsmapdownloader.navigation.NavigatorProvider
 import com.pavlo.regionsmapdownloader.ui.utils.StringFormatHelper
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -69,14 +70,12 @@ class RegionsListFragment : Fragment() {
             onCancelClick = { downloadName -> viewModel.cancelDownload(downloadName) },
             onRegionClick = { row ->
                 if (row.region.hasChildren) {
-                    parentFragmentManager.commit {
-                        replace(R.id.fragmentContainer, newInstance(row.path))
-                        addToBackStack(row.region.name)
-                    }
+                    (requireActivity() as NavigatorProvider).navigator.openRegionList(row.path)
                 }
             }
         )
         binding.regionRecyclerView.adapter = adapter
+        (binding.regionRecyclerView.itemAnimator as? SimpleItemAnimator)?.supportsChangeAnimations = false
 
         observeListItems()
         observeEvents()

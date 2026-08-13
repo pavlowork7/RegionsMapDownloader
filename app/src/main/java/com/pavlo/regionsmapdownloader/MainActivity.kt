@@ -11,17 +11,20 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.commit
 import com.pavlo.regionsmapdownloader.databinding.ActivityMainBinding
-import com.pavlo.regionsmapdownloader.ui.RegionsListFragment
+import com.pavlo.regionsmapdownloader.navigation.FragmentNavigator
+import com.pavlo.regionsmapdownloader.navigation.Navigator
+import com.pavlo.regionsmapdownloader.navigation.NavigatorProvider
 
 interface ToolbarHost {
     fun configureToolbar(title: String, showBackButton: Boolean)
 }
 
-class MainActivity : AppCompatActivity(), ToolbarHost {
+class MainActivity : AppCompatActivity(), ToolbarHost, NavigatorProvider {
 
     private lateinit var binding: ActivityMainBinding
+
+    override val navigator: Navigator by lazy { FragmentNavigator(supportFragmentManager, R.id.fragmentContainer) }
 
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: notification is a nice-to-have */ }
@@ -46,9 +49,7 @@ class MainActivity : AppCompatActivity(), ToolbarHost {
         }
 
         if (savedInstanceState == null) {
-            supportFragmentManager.commit {
-                replace(R.id.fragmentContainer, RegionsListFragment.newInstance())
-            }
+            navigator.openRegionList()
         }
 
         requestNotificationPermissionIfNeeded()
