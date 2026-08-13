@@ -9,10 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/**
- * Кнопка «Cancel» у сповіщенні скасовує лише поточну карту, а не всю чергу:
- * воркер після цього просто бере наступний елемент.
- */
 class DownloadCancelReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {

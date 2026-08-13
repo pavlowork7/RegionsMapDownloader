@@ -38,12 +38,10 @@ class RegionsViewModel(
     private val _memoryInfo = MutableStateFlow<DeviceMemoryInfo?>(null)
     val memoryInfo: StateFlow<DeviceMemoryInfo?> = _memoryInfo.asStateFlow()
 
-    /** Прогрес за іменем завантаження: активна карта — реальний відсоток, ті, що в черзі — 0. */
     val downloadProgress: StateFlow<Map<String, Int>> = downloadQueue.state
         .map { it.progressByName }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    /** Завантажені карти визначаються за файлами на диску, тож переживають перезапуск застосунку. */
     val completedRegions: StateFlow<Set<String>> = downloadQueue.completed
 
     val events: SharedFlow<DownloadQueueEvent> = downloadQueue.events

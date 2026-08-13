@@ -7,7 +7,6 @@ import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueItem
 import org.json.JSONArray
 import org.json.JSONObject
 
-/** Черга зберігається JSON-масивом у SharedPreferences — порядок елементів і є порядком обробки. */
 class SharedPrefsDownloadQueueStorage(context: Context) : DownloadQueueStorage {
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

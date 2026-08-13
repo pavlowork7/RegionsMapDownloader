@@ -39,10 +39,6 @@ class AppInitializer(context: Context) {
             .build()
     }
 
-    /**
-     * Один потік на всі завантаження карт — саме на ньому виконується мережеве й файлове
-     * введення-виведення. Разом із чергою це і є «послідовне завантаження в один потік».
-     */
     val downloadDispatcher: CoroutineDispatcher by lazy {
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, DOWNLOAD_THREAD_NAME) }
             .asCoroutineDispatcher()

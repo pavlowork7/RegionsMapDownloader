@@ -21,13 +21,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/**
- * Єдиний воркер, який розбирає чергу завантажень.
- *
- * Послідовність тут не від блокувань, а від самої структури: воркер один
- * (унікальна робота WorkManager), і він крутить `takeNext() → download → finishActive()`,
- * доки черга не спорожніє. Другого завантаження одночасно просто нема кому запустити.
- */
 class DownloadQueueWorker(
     context: Context,
     params: WorkerParameters,
@@ -58,14 +51,9 @@ class DownloadQueueWorker(
         }
     }
 
-    /**
-     * Качає один елемент у власній корутині, щоб скасування зупинило саме його,
-     * а не воркер разом з рештою черги.
-     */
     private suspend fun downloadItem(item: DownloadQueueItem): DownloadOutcome = coroutineScope {
         val download = async { runDownload(item) }
         val cancellationWatcher = launch {
-            // Елемент перестав бути активним — отже, його скасували.
             downloadQueue.state.first { it.active?.downloadName != item.downloadName }
             download.cancel()
         }
@@ -73,7 +61,6 @@ class DownloadQueueWorker(
         try {
             download.await()
         } catch (e: CancellationException) {
-            // Якщо зупиняють увесь воркер — виходимо, а не «ковтаємо» скасування.
             currentCoroutineContext().ensureActive()
             DownloadOutcome.Cancelled
         } finally {
@@ -102,11 +89,6 @@ class DownloadQueueWorker(
         DownloadOutcome.Failure(e.message)
     }
 
-    /**
-     * Сповіщення — допоміжне. Якщо система не дала стартувати foreground service
-     * (застосунок у фоні на Android 12+) або немає дозволу на сповіщення,
-     * завантаження має тривати, а не падати.
-     */
     private suspend fun updateForeground(item: DownloadQueueItem, percent: Int) {
         runCatching { setForeground(createForegroundInfo(item, percent)) }
     }

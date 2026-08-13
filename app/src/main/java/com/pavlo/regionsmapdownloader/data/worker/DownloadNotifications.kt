@@ -8,10 +8,6 @@ import androidx.core.app.NotificationCompat
 import com.pavlo.regionsmapdownloader.R
 import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueItem
 
-/**
- * Сповіщення одне на всю чергу — це коректно саме тому, що завантаження послідовні:
- * у будь-який момент є рівно одна активна карта, а решта показані лічильником.
- */
 object DownloadNotifications {
     const val CHANNEL_ID = "region_download_channel"
     const val NOTIFICATION_ID = 1001

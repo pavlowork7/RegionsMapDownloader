@@ -105,8 +105,6 @@ class RegionListAdapter(
                 else -> false
             }
 
-            // Порівнюємо тільки те, що впливає на вигляд рядка: типовий equals у data class
-            // рекурсивно обійшов би все піддерево Region, а діф іде на кожну зміну прогресу.
             override fun areContentsTheSame(oldItem: RegionListItem, newItem: RegionListItem): Boolean = when {
                 oldItem is RegionListItem.RegionRow && newItem is RegionListItem.RegionRow ->
                     oldItem.progress == newItem.progress &&

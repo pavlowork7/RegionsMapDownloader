@@ -19,17 +19,6 @@ import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * FIFO-черга завантажень карт — єдине джерело істини про те, що качається і що чекає.
- *
- * Послідовність забезпечує не блокування, а те, що чергу розбирає рівно один воркер
- * ([com.pavlo.regionsmapdownloader.data.worker.DownloadQueueWorker]) у циклі `takeNext() → download → finishActive()`.
- * Тому тут немає жодного локу: стан — незмінний [DownloadQueueState], а всі зміни йдуть
- * через атомарний CAS у `MutableStateFlow.update`.
- *
- * Екземпляр один на процес (створюється в `AppInitializer`), тож воркер і ViewModel
- * бачать один і той самий стан.
- */
 class DownloadQueue(
     private val storage: DownloadQueueStorage,
     private val mapStorage: MapStorage,
@@ -46,7 +35,6 @@ class DownloadQueue(
     private val _events = MutableSharedFlow<DownloadQueueEvent>(extraBufferCapacity = EVENT_BUFFER)
     val events: SharedFlow<DownloadQueueEvent> = _events.asSharedFlow()
 
-    /** Ідемпотентне відновлення з диска — його викликають і ViewModel на старті, і воркер. */
     suspend fun restore() {
         if (!restored.compareAndSet(false, true)) return
         val (saved, downloaded) = withContext(ioDispatcher) {
@@ -59,10 +47,7 @@ class DownloadQueue(
         _completed.value = downloaded
     }
 
-    /** @return `true`, якщо елемент реально доданий; `false`, якщо така карта вже в черзі. */
     suspend fun enqueue(item: DownloadQueueItem): Boolean {
-        // Блок update може виконатись кілька разів при конкуренції, але записується результат
-        // саме останнього виклику — тож `added` завжди відповідає тому стану, що переміг у CAS.
         var added = false
         val updated = _state.updateAndGet { current ->
             added = !current.contains(item.downloadName)
@@ -75,12 +60,6 @@ class DownloadQueue(
         return true
     }
 
-    /**
-     * Знімає голову черги і робить її активною.
-     *
-     * Викликає лише воркер і лише після [finishActive] попереднього елемента,
-     * тому активний елемент тут ніколи не затирається.
-     */
     suspend fun takeNext(): DownloadQueueItem? {
         val updated = _state.updateAndGet { current ->
             current.copy(
@@ -116,13 +95,6 @@ class DownloadQueue(
         }
     }
 
-    /**
-     * Скасовує одне завантаження. Елемент, що чекає, просто зникає з черги; активний —
-     * перестає бути активним, і воркер, який стежить за [state], перериває саме його корутину.
-     *
-     * Скасування — це зміна стану, а не одноразова подія: якщо воно встигло статися до того,
-     * як воркер почав стежити, він одразу побачить, що активного елемента вже немає.
-     */
     suspend fun cancel(downloadName: String) {
         val updated = _state.updateAndGet { current ->
             if (current.active?.downloadName == downloadName) {
