@@ -1,5 +1,6 @@
 package com.pavlo.regionsmapdownloader.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,11 +17,14 @@ import androidx.recyclerview.widget.SimpleItemAnimator
 import com.google.android.material.snackbar.Snackbar
 import com.pavlo.regionsmapdownloader.R
 import com.pavlo.regionsmapdownloader.RegionApplication
-import com.pavlo.regionsmapdownloader.ToolbarHost
 import com.pavlo.regionsmapdownloader.databinding.RegionListMainFragmentBinding
 import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueEvent
+import com.pavlo.regionsmapdownloader.navigation.Navigator
 import com.pavlo.regionsmapdownloader.navigation.NavigatorProvider
+import com.pavlo.regionsmapdownloader.navigation.ToolbarHost
+import com.pavlo.regionsmapdownloader.navigation.ToolbarState
 import com.pavlo.regionsmapdownloader.ui.utils.StringFormatHelper
+import com.pavlo.regionsmapdownloader.ui.utils.requireHost
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -49,8 +53,18 @@ class RegionsListFragment : Fragment() {
         }
     }
 
+    private lateinit var navigator: Navigator
+    private lateinit var toolbarHost: ToolbarHost
+
     private lateinit var adapter: RegionListAdapter
-    private var lastToolbarTitle: String? = null
+
+    private var appliedToolbarState: ToolbarState? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        navigator = requireHost<NavigatorProvider>().navigator
+        toolbarHost = requireHost<ToolbarHost>()
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = RegionListMainFragmentBinding.inflate(inflater, container, false)
@@ -60,7 +74,7 @@ class RegionsListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        lastToolbarTitle = null
+        appliedToolbarState = null
         binding.deviceMemoryContainer.visibility = if (isRoot) View.VISIBLE else View.GONE
         binding.sectionDivider.visibility = if (isRoot) View.VISIBLE else View.GONE
 
@@ -70,7 +84,7 @@ class RegionsListFragment : Fragment() {
             onCancelClick = { downloadName -> viewModel.cancelDownload(downloadName) },
             onRegionClick = { row ->
                 if (row.region.hasChildren) {
-                    (requireActivity() as NavigatorProvider).navigator.openRegionList(row.path)
+                    navigator.openRegionList(row.path)
                 }
             }
         )
@@ -131,9 +145,10 @@ class RegionsListFragment : Fragment() {
     }
 
     private fun setToolbar(title: String, showBackButton: Boolean) {
-        if (title == lastToolbarTitle) return
-        lastToolbarTitle = title
-        (requireActivity() as ToolbarHost).configureToolbar(title = title, showBackButton = showBackButton)
+        val state = ToolbarState(title, showBackButton)
+        if (state == appliedToolbarState) return
+        appliedToolbarState = state
+        toolbarHost.configureToolbar(state)
     }
 
     private fun observeEvents() {

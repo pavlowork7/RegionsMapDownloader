@@ -7,7 +7,7 @@ import com.pavlo.regionsmapdownloader.ui.RegionsListFragment
 
 class FragmentNavigator(
     private val fragmentManager: FragmentManager,
-    @IdRes private val containerId: Int
+    @param:IdRes private val containerId: Int
 ) : Navigator {
 
     override fun openRegionList(path: List<String>) {

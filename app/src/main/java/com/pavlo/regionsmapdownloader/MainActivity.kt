@@ -1,6 +1,7 @@
 package com.pavlo.regionsmapdownloader
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -15,19 +16,19 @@ import com.pavlo.regionsmapdownloader.databinding.ActivityMainBinding
 import com.pavlo.regionsmapdownloader.navigation.FragmentNavigator
 import com.pavlo.regionsmapdownloader.navigation.Navigator
 import com.pavlo.regionsmapdownloader.navigation.NavigatorProvider
+import com.pavlo.regionsmapdownloader.navigation.ToolbarHost
+import com.pavlo.regionsmapdownloader.navigation.ToolbarState
 
-interface ToolbarHost {
-    fun configureToolbar(title: String, showBackButton: Boolean)
-}
-
-class MainActivity : AppCompatActivity(), ToolbarHost, NavigatorProvider {
+class MainActivity : AppCompatActivity(), NavigatorProvider, ToolbarHost {
 
     private lateinit var binding: ActivityMainBinding
 
-    override val navigator: Navigator by lazy { FragmentNavigator(supportFragmentManager, R.id.fragmentContainer) }
+    override val navigator: Navigator by lazy {
+        FragmentNavigator(supportFragmentManager, R.id.fragmentContainer)
+    }
 
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* no-op: notification is a nice-to-have */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,18 +56,22 @@ class MainActivity : AppCompatActivity(), ToolbarHost, NavigatorProvider {
         requestNotificationPermissionIfNeeded()
     }
 
-    override fun configureToolbar(title: String, showBackButton: Boolean) {
-        supportActionBar?.title = title
-        supportActionBar?.setDisplayHomeAsUpEnabled(showBackButton)
+    override fun configureToolbar(state: ToolbarState) {
+        supportActionBar?.title = state.title
+        supportActionBar?.setDisplayHomeAsUpEnabled(state.showBackButton)
         binding.toolbar.setNavigationOnClickListener(
-            if (showBackButton) View.OnClickListener { onBackPressedDispatcher.onBackPressed() } else null
+            if (state.showBackButton) {
+                View.OnClickListener { onBackPressedDispatcher.onBackPressed() }
+            } else {
+                null
+            }
         )
     }
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
         val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED
         if (!granted) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
