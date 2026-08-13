@@ -43,6 +43,10 @@
             android:foregroundServiceType="dataSync"
             android:exported="false"
             tools:node="merge" />
+
+        <receiver
+            android:name=".data.worker.DownloadCancelReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

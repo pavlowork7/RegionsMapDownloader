@@ -2,12 +2,12 @@ package com.pavlo.regionsmapdownloader.data.data_source
 
 import com.pavlo.regionsmapdownloader.domain.data_source.RegionDownloadDataSource
 import com.pavlo.regionsmapdownloader.domain.model.DownloadProgress
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.Dispatchers
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -17,7 +17,8 @@ import java.io.IOException
 import java.util.zip.ZipInputStream
 
 class RegionDownloadDataSourceImpl(
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val downloadDispatcher: CoroutineDispatcher
 ): RegionDownloadDataSource {
 
     override fun downloadMap(url: String, destination: File): Flow<DownloadProgress> = flow {
@@ -56,7 +57,7 @@ class RegionDownloadDataSourceImpl(
         }
 
         emit(DownloadProgress.Completed(destination.path))
-    }.flowOn(Dispatchers.IO)
+    }.flowOn(downloadDispatcher)
 
     private fun extractMapEntry(archiveFile: File, destination: File) {
         val tempFile = File(destination.parentFile, "${destination.name}.part")

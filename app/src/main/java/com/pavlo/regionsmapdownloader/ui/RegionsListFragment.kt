@@ -18,6 +18,7 @@ import com.pavlo.regionsmapdownloader.R
 import com.pavlo.regionsmapdownloader.RegionApplication
 import com.pavlo.regionsmapdownloader.ToolbarHost
 import com.pavlo.regionsmapdownloader.databinding.RegionListMainFragmentBinding
+import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueEvent
 import com.pavlo.regionsmapdownloader.ui.utils.StringFormatHelper
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
@@ -41,7 +42,7 @@ class RegionsListFragment : Fragment() {
                     di.getAllRegionsUseCase,
                     di.getDeviceMemoryInfoUseCase,
                     di.regionDownloadScheduler,
-                    di.workManager
+                    di.downloadQueue
                 )
             }
         }
@@ -64,8 +65,8 @@ class RegionsListFragment : Fragment() {
 
         binding.regionRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = RegionListAdapter(
-            onDownloadClick = { regionKey, downloadName -> viewModel.startDownload(regionKey, downloadName) },
-            onCancelClick = { regionKey -> viewModel.cancelDownload(regionKey) },
+            onDownloadClick = { downloadName, displayName -> viewModel.startDownload(downloadName, displayName) },
+            onCancelClick = { downloadName -> viewModel.cancelDownload(downloadName) },
             onRegionClick = { row ->
                 if (row.region.hasChildren) {
                     parentFragmentManager.commit {
@@ -141,10 +142,14 @@ class RegionsListFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.events.collect { event ->
                     when (event) {
-                        is RegionsEvent.DownloadFailed -> Snackbar
-                            .make(binding.root, getString(R.string.download_failed), Snackbar.LENGTH_LONG)
+                        is DownloadQueueEvent.Failed -> Snackbar
+                            .make(
+                                binding.root,
+                                getString(R.string.download_failed_format, event.item.displayName),
+                                Snackbar.LENGTH_LONG
+                            )
                             .setAction(R.string.retry) {
-                                viewModel.startDownload(event.regionKey, event.downloadName)
+                                viewModel.startDownload(event.item.downloadName, event.item.displayName)
                             }
                             .show()
                     }

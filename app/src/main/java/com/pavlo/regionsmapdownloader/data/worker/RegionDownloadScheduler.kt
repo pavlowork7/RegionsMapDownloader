@@ -1,52 +1,45 @@
 package com.pavlo.regionsmapdownloader.data.worker
 
 import android.content.Context
-import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.workDataOf
-import com.pavlo.regionsmapdownloader.data.data_source.OsmAndUrlBuilder
-import java.io.File
-import java.util.concurrent.TimeUnit
+import com.pavlo.regionsmapdownloader.data.queue.DownloadQueue
+import com.pavlo.regionsmapdownloader.domain.model.DownloadQueueItem
 
-class RegionDownloadScheduler(private val context: Context) {
+class RegionDownloadScheduler(
+    private val context: Context,
+    private val downloadQueue: DownloadQueue
+) {
+    /**
+     * Ставить карту в кінець черги. Якщо воркер уже працює — він підхопить елемент сам,
+     * тому нову роботу тут вмикаємо лише як гарантію, що обробник взагалі запущений.
+     */
+    suspend fun enqueue(item: DownloadQueueItem) {
+        if (downloadQueue.enqueue(item)) {
+            startQueueWorker()
+        }
+    }
 
-    fun enqueue(regionKey: String, downloadName: String) {
-        val request = OneTimeWorkRequestBuilder<RegionDownloadWorker>()
-            .setInputData(
-                workDataOf(
-                    RegionDownloadWorker.KEY_URL to OsmAndUrlBuilder.mapUrl(downloadName),
-                    RegionDownloadWorker.KEY_DEST to destinationFile(downloadName).path
-                )
-            )
+    suspend fun cancel(downloadName: String) {
+        downloadQueue.cancel(downloadName)
+    }
+
+    private fun startQueueWorker() {
+        val request = OneTimeWorkRequestBuilder<DownloadQueueWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_DELAY_SECONDS, TimeUnit.SECONDS)
-            .addTag(TAG_DOWNLOAD)
-            .addTag(regionTag(regionKey))
             .build()
 
+        // APPEND_OR_REPLACE, а не KEEP: якщо воркер саме завершує цикл, нова робота стане
+        // наступною в ланцюгу — і жоден елемент не залишиться в черзі без обробника.
+        // Робота одна на всю чергу, тому паралельних завантажень не виникає в принципі.
         WorkManager.getInstance(context)
-            .enqueueUniqueWork(regionKey, ExistingWorkPolicy.REPLACE, request)
+            .enqueueUniqueWork(QUEUE_WORK_NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
     }
 
-    fun cancel(regionKey: String) {
-        WorkManager.getInstance(context).cancelUniqueWork(regionKey)
-    }
-
-    private fun destinationFile(downloadName: String): File {
-        val mapsDir = context.getExternalFilesDir(MAPS_DIR) ?: File(context.filesDir, MAPS_DIR)
-        mapsDir.mkdirs()
-        return File(mapsDir, "$downloadName.obf")
-    }
-
-    companion object {
-        const val TAG_DOWNLOAD = "region_download"
-        private const val MAPS_DIR = "osmand"
-        private const val BACKOFF_DELAY_SECONDS = 10L
-
-        fun regionTag(regionKey: String) = "region:$regionKey"
+    private companion object {
+        const val QUEUE_WORK_NAME = "region_download_queue"
     }
 }

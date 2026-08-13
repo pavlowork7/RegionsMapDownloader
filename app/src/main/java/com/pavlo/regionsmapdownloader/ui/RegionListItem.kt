@@ -11,10 +11,15 @@ sealed class RegionListItem {
         val progress: Int? = null,
         val isCompleted: Boolean = false
     ) : RegionListItem() {
-        val downloadKey: String = path.joinToString("/")
+        /** Ідентичність рядка в списку — шлях у дереві, а не ім'я завантаження. */
+        val rowKey: String = path.joinToString("/")
     }
 }
 
+/**
+ * Прогрес і позначка «завантажено» приходять за `downloadName`: саме він визначає файл на диску,
+ * тож два різні рядки з однаковим `downloadName` — це та сама карта, і показувати їх треба однаково.
+ */
 fun List<Region>.toListItems(
     progress: Map<String, Int> = emptyMap(),
     completed: Set<String> = emptySet()
@@ -33,10 +38,12 @@ private fun Region.toRow(
     path: List<String>,
     progress: Map<String, Int>,
     completed: Set<String>
-): RegionListItem.RegionRow {
-    val key = path.joinToString("/")
-    return RegionListItem.RegionRow(this, path, progress[key], key in completed)
-}
+): RegionListItem.RegionRow = RegionListItem.RegionRow(
+    region = this,
+    path = path,
+    progress = progress[downloadName],
+    isCompleted = downloadName in completed
+)
 
 fun List<Region>.findByPath(path: List<String>): Region? {
     if (path.isEmpty()) return null

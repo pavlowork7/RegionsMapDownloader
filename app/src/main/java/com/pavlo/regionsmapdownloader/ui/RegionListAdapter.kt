@@ -12,8 +12,8 @@ import com.pavlo.regionsmapdownloader.databinding.ContinentHeaderItemBinding
 import com.pavlo.regionsmapdownloader.databinding.RegionListItemBinding
 
 class RegionListAdapter(
-    private val onDownloadClick: (regionKey: String, downloadName: String) -> Unit,
-    private val onCancelClick: (regionKey: String) -> Unit,
+    private val onDownloadClick: (downloadName: String, displayName: String) -> Unit,
+    private val onCancelClick: (downloadName: String) -> Unit,
     private val onRegionClick: (RegionListItem.RegionRow) -> Unit,
 ) : ListAdapter<RegionListItem, RecyclerView.ViewHolder>(DIFF_CALLBACK) {
 
@@ -56,7 +56,11 @@ class RegionListAdapter(
             binding.regionTitleTextView.text = row.region.displayName
             binding.regionMapImageButton.visibility = if (row.region.isMap) View.VISIBLE else View.GONE
             binding.regionMapImageButton.setOnClickListener {
-                if (isDownloading) onCancelClick(row.downloadKey) else onDownloadClick(row.downloadKey, row.region.downloadName)
+                if (isDownloading) {
+                    onCancelClick(row.region.downloadName)
+                } else {
+                    onDownloadClick(row.region.downloadName, row.region.displayName)
+                }
             }
             binding.regionCardContainer.setOnClickListener { onRegionClick(row) }
 
@@ -97,12 +101,20 @@ class RegionListAdapter(
                 oldItem is RegionListItem.ContinentHeader && newItem is RegionListItem.ContinentHeader ->
                     oldItem.name == newItem.name
                 oldItem is RegionListItem.RegionRow && newItem is RegionListItem.RegionRow ->
-                    oldItem.downloadKey == newItem.downloadKey
+                    oldItem.rowKey == newItem.rowKey
                 else -> false
             }
 
-            override fun areContentsTheSame(oldItem: RegionListItem, newItem: RegionListItem): Boolean =
-                oldItem == newItem
+            // Порівнюємо тільки те, що впливає на вигляд рядка: типовий equals у data class
+            // рекурсивно обійшов би все піддерево Region, а діф іде на кожну зміну прогресу.
+            override fun areContentsTheSame(oldItem: RegionListItem, newItem: RegionListItem): Boolean = when {
+                oldItem is RegionListItem.RegionRow && newItem is RegionListItem.RegionRow ->
+                    oldItem.progress == newItem.progress &&
+                        oldItem.isCompleted == newItem.isCompleted &&
+                        oldItem.region.displayName == newItem.region.displayName &&
+                        oldItem.region.isMap == newItem.region.isMap
+                else -> oldItem == newItem
+            }
         }
     }
 }
