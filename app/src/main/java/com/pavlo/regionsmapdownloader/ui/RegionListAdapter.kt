@@ -38,6 +38,15 @@ class RegionListAdapter(
         }
     }
 
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
+        val item = getItem(position)
+        if (payloads.contains(PROGRESS_PAYLOAD) && holder is RegionViewHolder && item is RegionListItem.RegionRow) {
+            holder.animateProgress(item.progress ?: 0)
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
+        }
+    }
+
     class ContinentHeaderViewHolder(
         private val binding: ContinentHeaderItemBinding
     ) : RecyclerView.ViewHolder(binding.root) {
@@ -64,11 +73,15 @@ class RegionListAdapter(
             }
             binding.regionCardContainer.setOnClickListener { onRegionClick(row) }
 
-            binding.linearProgress.progress = row.progress ?: 0
+            binding.linearProgress.setProgressCompat(row.progress ?: 0, false)
             binding.linearProgress.visibility = if (isDownloading) View.VISIBLE else View.GONE
 
             applyCompletedTint(row.isCompleted)
             applyDownloadIcon(isDownloading)
+        }
+
+        fun animateProgress(progress: Int) {
+            binding.linearProgress.setProgressCompat(progress, true)
         }
 
         private fun applyCompletedTint(isCompleted: Boolean) {
@@ -113,6 +126,21 @@ class RegionListAdapter(
                         oldItem.region.isMap == newItem.region.isMap
                 else -> oldItem == newItem
             }
+
+            override fun getChangePayload(oldItem: RegionListItem, newItem: RegionListItem): Any? {
+                if (oldItem is RegionListItem.RegionRow && newItem is RegionListItem.RegionRow &&
+                    oldItem.progress != null && newItem.progress != null &&
+                    oldItem.progress != newItem.progress &&
+                    oldItem.isCompleted == newItem.isCompleted &&
+                    oldItem.region.displayName == newItem.region.displayName &&
+                    oldItem.region.isMap == newItem.region.isMap
+                ) {
+                    return PROGRESS_PAYLOAD
+                }
+                return null
+            }
         }
+
+        private const val PROGRESS_PAYLOAD = "progress"
     }
 }
